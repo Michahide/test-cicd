@@ -1,0 +1,43 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest  # This job still runs on GitHub-hosted runner
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm run test
+
+  deploy:
+    needs: test
+    runs-on: self-hosted  # This will run on your VM
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Build Docker image
+        run: |
+          docker build -t localhost:5000/nextjs-app:${{ github.sha }} .
+          
+      - name: Push to private registry
+        run: |
+          docker push localhost:5000/nextjs-app:${{ github.sha }}
+          
+      - name: Deploy container
+        run: |
+          docker stop nextjs-app || true
+          docker rm nextjs-app || true
+          docker run -d --name nextjs-app \
+            -p 3000:3000 \
+            localhost:5000/nextjs-app:${{ github.sha }}
