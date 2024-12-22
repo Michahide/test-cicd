@@ -10,9 +10,12 @@ jobs:
   test:
     runs-on: ubuntu-latest  # This job still runs on GitHub-hosted runner
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 6.32.9
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -25,8 +28,7 @@ jobs:
     needs: test
     runs-on: self-hosted  # This will run on your VM
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
       - name: Build Docker image
         run: |
           docker build -t localhost:5000/nextjs-app:${{ github.sha }} .
